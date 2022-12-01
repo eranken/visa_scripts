@@ -1,5 +1,11 @@
 import pyvisa 
 import readline
+import argparse 
+
+parser = argparse.ArgumentParser()
+parser.add_argument("-d", "--debug", action="store_true")
+args = parser.parse_args()
+
 
 help_dict = {
 	"channels are" : "0-4, 5=external trigger",
@@ -14,7 +20,7 @@ help_dict = {
 	"triglevel [ch] [lv]": "set trigger threshold for channel [ch] level to [lv](V)",
 	"trigslope [slope]": "set trigger [slope] to 'POS' or 'NEG'",
 	"trigmode [mode]": "set trigger [mode] to 'AUTO' or 'NORM'",
-	"trigtype [type]": "set trigger [type] to 'EDGE', 'WIDTh', 'BUS', ...",
+	"trigtype [type]": "set trigger [type] to 'EDGE', 'WIDTH', 'BUS', ...",
 	"trigcoupling [mode]": "set the trig coupling [mode] to 'AC' or 'DC'",
 	"reset" : "reset the scope to default settings",
 	"query [CMD]": "send a query 'CMD' directly to the machine, e.g. '*IDN?'",
@@ -25,7 +31,7 @@ help_dict = {
 	
 machine_commands = ["query","write", "scale", "tscale","trigslope","tpos","pos","reset","offset", "trigsource","trigmode","triglevel","trigcoupling", "on","off"]
 
-init_commands = ["trigmode AUTO","trigtype slope","trigslope neg","trigcoupling DC"]
+init_commands = ["trigmode AUTO","trigtype SLOPE","trigslope NEG","trigcoupling DC"]
 
 def confirm(msg):
 	print(msg)
@@ -70,7 +76,7 @@ def machine_command(cmd):
 
 	if base_cmd == "trigcoupling":
 		mode = cmd_list[1]
-		scope.write(f"TRIGger:A:EDGE:COUPling {mode}")	
+		scope.write(f"TRIGger:A:EDGE:COUPLING {mode}")	
 
 	if base_cmd == "triglevel":
 		chan  = cmd_list[1]	
@@ -139,8 +145,15 @@ def machine_command(cmd):
 	
 ### MAIN CODE
 
-rm = pyvisa.ResourceManager("@py")
-scope = rm.open_resource('USB0::2733::279::026508776::0::INSTR')
+rmstring = "@py"
+inst_address = "USB0::2733::279::026508776::0::INSTR"
+if args.debug:
+	rmstring = "@sim"
+	inst_address = "ASRL1::INSTR"
+	print("***debug mode, simulated device***")
+rm = pyvisa.ResourceManager(rmstring)
+rm.list_resources()
+scope = rm.open_resource(inst_address)
 connection_test = scope.query('*IDN?')
 print("Connection Test: \n\n", connection_test )
 
