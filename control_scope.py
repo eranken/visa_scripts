@@ -11,10 +11,11 @@ help_dict = {
 	"pos [ch] [y]" : "set the y position of channel [ch] to [y](div)",
 	"offset [ch] [t]": "set offset of channel [ch] to [t]", 
 	"trigsource [ch]": "set trigger source to channel [ch]",
+	"triglevel [ch] [lv]": "set trigger threshold for channel [ch] level to [lv](V)",
 	"trigslope [slope]": "set trigger [slope] to 'POS' or 'NEG'",
 	"trigmode [mode]": "set trigger [mode] to 'AUTO' or 'NORM'",
 	"trigtype [type]": "set trigger [type] to 'EDGE', 'WIDTh', 'BUS', ...",
-	"triglevel [ch] [lv]": "set trigger threshold for channel [ch] level to [lv](V)",
+	"trigcoupling [mode]": "set the trig coupling [mode] to 'AC' or 'DC'",
 	"reset" : "reset the scope to default settings",
 	"query [CMD]": "send a query 'CMD' directly to the machine, e.g. '*IDN?'",
 	"write [CMD]": "send a write command 'CMD' directly to the machine, e.g. 'CHAN1:STAT ON'",
@@ -22,7 +23,9 @@ help_dict = {
 	"q": "quit program",
 }
 	
-machine_commands = ["query","write", "scale", "tscale","trigslope","tpos","pos","reset","offset", "trigsource","trigmode","triglevel", "on","off"]
+machine_commands = ["query","write", "scale", "tscale","trigslope","tpos","pos","reset","offset", "trigsource","trigmode","triglevel","trigcoupling", "on","off"]
+
+init_commands = ["trigmode AUTO","trigtype slope","trigslope neg","trigcoupling DC"]
 
 def confirm(msg):
 	print(msg)
@@ -33,8 +36,8 @@ def confirm(msg):
 		print("ok, not doing it")
 		return False
 
-
-def machine_command(cmd_list):
+def machine_command(cmd):
+	cmd_list = cmd.split(" ")
 	base_cmd = cmd_list[0]
 	
 	if base_cmd == "on":
@@ -64,6 +67,10 @@ def machine_command(cmd_list):
 	if base_cmd == "trigslope":
 		slp = cmd_list[1]
 		scope.write(f"TRIG:A:EDGE:SLOPE {slp}")		
+
+	if base_cmd == "trigcoupling":
+		mode = cmd_list[1]
+		scope.write(f"TRIGger:A:EDGE:COUPling {mode}")	
 
 	if base_cmd == "triglevel":
 		chan  = cmd_list[1]	
@@ -141,6 +148,11 @@ print("Connection Test: \n\n", connection_test )
 #res=rm.list_resources("?*")
 #print("Resource List:\n",res)
 
+for cmd in init_commands:
+	print("initializing with command :"+cmd)
+	try: machine_command(cmd)
+	except: print("ERROR: invalid initial command? ")	
+
 while True:
 	print("\n")
 	cmd = input(">>>")
@@ -154,7 +166,7 @@ while True:
 			print(f"{k:20} : {v}")
 			
 	elif base_cmd in machine_commands:
-		try: machine_command(cmd_args)
+		try: machine_command(cmd)
 		except: print("invalid command format? ")
 	elif base_cmd=="q":
 		break
